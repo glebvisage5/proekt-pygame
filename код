@@ -1,0 +1,163 @@
+import pygame
+from random import randrange
+import os
+import pygame_menu
+
+pygame.init()
+surface = pygame.display.set_mode((700, 700))
+pygame.display.set_caption('Змейка')
+
+
+def start_the_game():
+    RES = 700
+    SIZE = 40
+    x, y = randrange(SIZE, RES - SIZE, SIZE), randrange(SIZE, RES - SIZE, SIZE)
+    prep = randrange(SIZE, RES - SIZE, SIZE), randrange(SIZE, RES - SIZE, SIZE)
+    prep1 = randrange(SIZE, RES - SIZE, SIZE), randrange(SIZE, RES - SIZE, SIZE)
+    prep2 = randrange(SIZE, RES - SIZE, SIZE), randrange(SIZE, RES - SIZE, SIZE)
+    prep3 = randrange(SIZE, RES - SIZE, SIZE), randrange(SIZE, RES - SIZE, SIZE)
+    apple = randrange(SIZE, RES - SIZE, SIZE), randrange(SIZE, RES - SIZE, SIZE)
+    length = 1
+    prepat = 1
+    snake = [(x, y)]
+    dx, dy = 0, 0
+    fps = 60
+    dirs = {'W': True, 'S': True, 'A': True, 'D': True, }
+    score = 0
+    speed_count, speed_prep, snake_speed = 0, 0, 15
+
+    pygame.init()
+    surface = pygame.display.set_mode([RES, RES])
+    clock = pygame.time.Clock()
+    font_score = pygame.font.SysFont('Arial', 26, bold=True)
+    font_speed = pygame.font.SysFont('Arial', 26, bold=True)
+    font_end = pygame.font.SysFont('Arial', 106, bold=True)
+    img = pygame.image.load('data/1.jpg').convert()
+    myimage = pygame.image.load("data/apple.jpg").convert()
+    myimage1 = pygame.image.load("data/game over.jpg").convert()
+
+    def load_image(name, colorkey=None):
+        fullname = os.path.join('data', name)
+        image = pygame.image.load(fullname)
+        if colorkey is not None:
+            if colorkey == -1:
+                colorkey = image.get_at((0, 0))
+            image.set_colorkey(colorkey)
+        return image
+
+    def start_screen():
+        intro_text = ["ЗАСТАВКА", "",
+                      "Правила игры:",
+                      "Вы наверное все умеете играть в змейку,",
+                      "Так вот я сделал змейку, если она съест яблоко,",
+                      "То увеличет свою скорость. "
+                      "Максимальный рекорд 15.",
+                      'Вы думаете справитесь, но не тут то было',
+                      'Каждый раз съедая яблоко рандомно генерируются припятсвтия,',
+                      'Припятствия блоками 1 на 1, если ты врезаешься',
+                      'В этот блок то игра заканчивается!',
+                      'Нажмите на любую кнопку, змейка зелёного цвета а припятствия дугого.',
+                      'Препятствия могут появится внезапно и вы проиграете.',
+                      'Управление WASD'
+                      "                       Удачи побить рекорд!"]
+
+        fon = pygame.transform.scale(load_image('2.jpg'), (RES, RES))
+        surface.blit(fon, (0, 0))
+        font = pygame.font.Font(None, 30)
+        text_coord = 50
+        for line in intro_text:
+            string_rendered = font.render(line, 1, pygame.Color('black'))
+            intro_rect = string_rendered.get_rect()
+            text_coord += 10
+            intro_rect.top = text_coord
+            intro_rect.x = 10
+            text_coord += intro_rect.height
+            surface.blit(string_rendered, intro_rect)
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    exit()
+                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    return
+            pygame.display.flip()
+            clock.tick(fps)
+
+    start_screen()
+
+    def close_game():
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit()
+
+    while True:
+        surface.blit(img, (0, 0))
+        [pygame.draw.rect(surface, pygame.Color('green'), (i, j, SIZE - 1, SIZE - 1)) for i, j in snake]
+        pygame.draw.rect(surface, pygame.Color('red'), (*prep, SIZE, SIZE))
+        pygame.draw.rect(surface, pygame.Color('black'), (*prep1, SIZE, SIZE))
+        pygame.draw.rect(surface, pygame.Color('blue'), (*prep2, SIZE, SIZE))
+        pygame.draw.rect(surface, pygame.Color('yellow'), (*prep3, SIZE, SIZE))
+        myimage = pygame.transform.scale(myimage, (SIZE, SIZE))
+        myimage.set_colorkey((0, 0, 0))
+        surface.blit(myimage, (*apple, *apple))
+        render_score = font_score.render(f'Счёт: {score}', 1, pygame.Color('orange'))
+        render_speed = font_speed.render(f'Длина змейки: {length}', 1, pygame.Color('orange'))
+        surface.blit(render_score, (250, 5))
+        surface.blit(render_speed, (250, 30))
+        speed_count += 1
+        if not speed_count % snake_speed:
+            x += dx * SIZE
+            y += dy * SIZE
+            snake.append((x, y))
+            snake = snake[-length:]
+        if snake[-1] == apple:
+            apple = randrange(SIZE, RES - SIZE, SIZE), randrange(SIZE, RES - SIZE, SIZE)
+            prep = randrange(SIZE, RES - SIZE, SIZE), randrange(SIZE, RES - SIZE, SIZE)
+            prep1 = randrange(SIZE, RES - SIZE, SIZE), randrange(SIZE, RES - SIZE, SIZE)
+            prep2 = randrange(SIZE, RES - SIZE, SIZE), randrange(SIZE, RES - SIZE, SIZE)
+            prep3 = randrange(SIZE, RES - SIZE, SIZE), randrange(SIZE, RES - SIZE, SIZE)
+            length += 1
+            prepat += 1
+            score += 1
+            snake_speed -= 1 % 2
+            snake_speed = max(snake_speed, 4)
+        if x < 0 or x > RES - 1 or y < 0 or y > RES - 1 or len(snake) != len(set(snake)) or snake[-1] == prep\
+                or snake[-1] == prep1:
+            while True:
+                surface.blit(myimage1, (0, 0))
+                for event in pygame.event.get():
+                    if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.KEYDOWN:
+                        return
+                pygame.display.flip()
+                close_game()
+
+        pygame.display.flip()
+        clock.tick(fps)
+        close_game()
+        key = pygame.key.get_pressed()
+        if key[pygame.K_w]:
+            if dirs['W']:
+                dx, dy = 0, -1
+                dirs = {'W': True, 'S': False, 'A': True, 'D': True, }
+        elif key[pygame.K_s]:
+            if dirs['S']:
+                dx, dy = 0, 1
+                dirs = {'W': False, 'S': True, 'A': True, 'D': True, }
+        elif key[pygame.K_a]:
+            if dirs['A']:
+                dx, dy = -1, 0
+                dirs = {'W': True, 'S': True, 'A': True, 'D': False, }
+        elif key[pygame.K_d]:
+            if dirs['D']:
+                dx, dy = 1, 0
+                dirs = {'W': True, 'S': True, 'A': False, 'D': True, }
+    pass
+
+
+menu = pygame_menu.Menu(500, 600, 'Привет', theme=pygame_menu.themes.THEME_GREEN)
+
+menu.add_text_input('Имя: ', default='Игрок 1')
+menu.add_button('Играть', start_the_game)
+menu.add_button('Выход', pygame_menu.events.EXIT)
+
+menu.mainloop(surface)
